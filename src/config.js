@@ -32,29 +32,58 @@ export const RELIC_NAMES = {
 // Peta data-driven. Tambah peta = tambah entri di sini.
 // Koordinat 0-100. `anchor` = jangkar markas (untuk base).
 export const MAPS = [
-  { id: "base_axion",   name: "Base Axion",   type: "base", race: "axion",   anchor: { x: 14, y: 14 }, npcPvp: { x: 22, y: 20 }, chip: { x: 22, y: 26 } },
-  { id: "base_belvian", name: "Base Belvian", type: "base", race: "belvian", anchor: { x: 14, y: 14 }, npcPvp: { x: 22, y: 20 }, chip: { x: 78, y: 26 } },
-  { id: "base_cyra",    name: "Base Cyra",    type: "base", race: "cyra",    anchor: { x: 14, y: 14 }, npcPvp: { x: 22, y: 20 }, chip: { x: 50, y: 80 } },
-  
-  // Ether: PvP bebas di luar, tapi ada mini-base aman untuk tiap ras
-  { id: "ether", name: "Ether", type: "zone", 
+  { 
+    id: "base_axion", name: "Base Axion", type: "base", race: "axion", 
+    anchor: { x: 14, y: 14 }, npcPvp: { x: 22, y: 20 }, chip: { x: 22, y: 26 },
+    altar: { x: 10, y: 10 }, // Titik Respawn
+    portal: { x: 18, y: 18 } // Titik Teleport ke War
+  },
+  { 
+    id: "base_belvian", name: "Base Belvian", type: "base", race: "belvian", 
+    anchor: { x: 14, y: 14 }, npcPvp: { x: 22, y: 20 }, chip: { x: 78, y: 26 },
+    altar: { x: 10, y: 10 },
+    portal: { x: 18, y: 18 }
+  },
+  { 
+    id: "base_cyra", name: "Base Cyra", type: "base", race: "cyra", 
+    anchor: { x: 14, y: 14 }, npcPvp: { x: 22, y: 20 }, chip: { x: 50, y: 80 },
+    altar: { x: 10, y: 10 },
+    portal: { x: 18, y: 18 }
+  },
+  { 
+    id: "ether", name: "Ether", type: "zone", 
     safeZones: [
       { race: "axion", x: 20, y: 20, radius: 8 }, 
       { race: "belvian", x: 80, y: 20, radius: 8 }, 
       { race: "cyra", x: 50, y: 80, radius: 8 }
     ],
-    npc: { x: 50, y: 50 } // NPC di tengah (rawan)
+    npc: { x: 50, y: 50 },
+    altars: [ // Altar untuk tiap ras di Ether
+      { race: "axion", x: 20, y: 20 },
+      { race: "belvian", x: 80, y: 20 },
+      { race: "cyra", x: 50, y: 80 }
+    ]
   },
-  
-  // Elan: Safe Zone bersama untuk ke-3 ras
-  { id: "elan_plateau", name: "Elan Plateau", type: "zone", 
+  { 
+    id: "elan_plateau", name: "Elan Plateau", type: "zone", 
     safeZones: [
       { race: "all", x: 50, y: 50, radius: 15 }
     ],
-    npc: { x: 50, y: 50 }
+    npc: { x: 50, y: 50 },
+    altars: [ // Altar bersama di Elan
+      { race: "all", x: 45, y: 50 },
+      { race: "all", x: 55, y: 50 }
+    ]
   },
-  
-  { id: "crag_mine", name: "Crag Mine", type: "zone", safeZones: [] },
+  { 
+    id: "crag_mine", name: "Crag Mine", type: "zone", 
+    safeZones: [],
+    portals: [ // Gerbang masuk di Crag Mine
+      { race: "axion", x: 22, y: 26 },
+      { race: "belvian", x: 78, y: 26 },
+      { race: "cyra", x: 50, y: 80 }
+    ]
+  },
 ];
 
 export function getMap(id) {
@@ -93,16 +122,24 @@ export const TUNING = {
   monsterAtkPerLevel: 2.2,
   monsterDefBase: 5,
   monsterDefPerLevel: 1.2,
-  monsterRespawnSeconds: 20,
+  monsterRespawnSeconds: 60,
 };
 
 // Loot table sederhana (nama & nilai jual)
-export const LOOT_TABLE = [
+// Tabel Loot Umum (Sering muncul, nilai jual wajar)
+export const LOOT_COMMON = [
   { name: "Beam Core",       minValue: 20,  maxValue: 60  },
   { name: "Gli Crystal",     minValue: 40,  maxValue: 100 },
   { name: "Rian Ore",        minValue: 80,  maxValue: 180 },
   { name: "Talic Fragment",  minValue: 150, maxValue: 300 },
   { name: "Dark Reliquary",  minValue: 250, maxValue: 500 },
+];
+
+// Tabel Loot Langka (Jarang muncul, harga jual sangat tinggi)
+export const LOOT_RARE = [
+  { name: "Ancient Dragon Scale", minValue: 5000,  maxValue: 8000  },
+  { name: "Void Crystal",         minValue: 8000,  maxValue: 12000 },
+  { name: "Celestial Core",       minValue: 15000, maxValue: 25000 },
 ];
 
 export const GEAR_TIERS = [
@@ -113,3 +150,22 @@ export const GEAR_TIERS = [
   { reqLevel: 40, name: "Etheric C-Set",    cost: 135000, atkBonus: 135, defBonus: 88 },
   { reqLevel: 45, name: "Archon Relic Set", cost: 290000, atkBonus: 205, defBonus: 132 },
 ];
+
+// Pengaturan Tempa Relic (+1 sampai +7)
+export const RELIC_UPGRADE = {
+  pvpCostBase: 1400,
+  pvpCostPerLevel: 900,
+  goldCostBase: 45000,
+  talicCost: 2,
+  successRates: [0.55, 0.42, 0.30, 0.20, 0.13, 0.08, 0.04] // Peluang sukses dari +0 ke +1, dst.
+};
+
+// Pengaturan Endgame (Ascension)
+export const ASCENSION_REQUIREMENTS = {
+  level: 50,
+  cp: 20000,
+  bonusAtkPerRank: 0.03, // +3% ATK per Veteran Rank
+  bonusHpPerRank: 0.03   // +3% HP per Veteran Rank
+};
+
+export const SAVE_KEY = "ironveil_save_v1";

@@ -101,19 +101,78 @@ export function computeStats(level, role) {
   };
 }
 
-export function expNeeded(level) {
-  return Math.round(TUNING.expNeedBase * Math.pow(level, TUNING.expNeedExp));
+export function checkLevelUp(character) {
+  // Batas maksimal level adalah 50
+  if (character.level >= 50) return false;
+
+  // Rumus EXP yang dibutuhkan
+  const needed = Math.round(60 * Math.pow(character.level, 1.7));
+  
+  // Jika EXP cukup, naikkan level
+  if (character.exp >= needed) {
+    character.exp -= needed;
+    character.level++;
+    
+    // Hitung ulang statistik dasar (ATK, DEF, HP) sesuai level baru
+    const stats = computeStats(character.level, character.role);
+    character.hpMax = stats.hpMax;
+    character.atk = stats.atk;
+    character.def = stats.def;
+    
+    // Pulihkan HP saat naik level
+    character.hp = character.hpMax;
+
+    // Cek apakah naik level ini memicu Gear baru
+    // (Biarkan AI yang membelinya di NPC, tapi kita bisa beri log)
+    
+    return true;
+  }
+  
+  return false;
 }
 
-export function addExp(character, amount) {
-  character.exp += amount;
-  while (character.level < 50 && character.exp >= expNeeded(character.level)) {
-    character.exp -= expNeeded(character.level);
-    character.level++;
-    const s = computeStats(character.level, character.role);
-    character.hpMax = s.hpMax;
-    character.atk = s.atk;
-    character.def = s.def;
+export function getNextGear(character) {
+  const nextIdx = character.gearTierIndex + 1;
+  if (nextIdx >= GEAR_TIERS.length) return null;
+  const gear = GEAR_TIERS[nextIdx];
+  if (character.level >= gear.reqLevel) return { ...gear, index: nextIdx };
+  return null;
+}
+
+import { ASCENSION_REQUIREMENTS } from "../config.js";
+
+export function checkAscension(world, character) {
+  if (character.level >= ASCENSION_REQUIREMENTS.level && character.cp >= ASCENSION_REQUIREMENTS.cp) {
+    // Simpan gelar dan rank
+    character.vetRank = (character.vetRank || 0) + 1;
+    
+    // Reset ke Lv 1
+    character.level = 1;
+    character.exp = 0;
+    
+    // Reset Gold & PvP (sesuai aturan)
+    character.gold = 0;
+    character.pvp = 0;
+    
+    // Hitung ulang stats dasar (Lv 1), tapi dengan bonus Veteran
+    const baseStats = computeStats(1, character.role);
+    const multiplier = 1 + (character.vetRank * ASCENSION_REQUIREMENTS.bonusAtkPerRank);
+    
+    character.hpMax = Math.round(baseStats.hpMax * multiplier);
+    character.atk = baseStats.atk * multiplier;
+    character.def = baseStats.def * multiplier;
     character.hp = character.hpMax;
+    
+    // Log kejadian besar
+    world.logs.unshift({
+      tick: world.simTick,
+      day: world.day,
+      time: "!!:!!",
+      category: "pvp", // Pakai warna merah/rose
+      message: `🌟 LAHIR KEMBALI! ${character.name} mencapai Lv 50 & naik ke Rank Veteran ${character.vetRank}!`
+    });
+
+    return true;
   }
+  return false;
 }

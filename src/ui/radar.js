@@ -128,20 +128,68 @@ export function createRadar({ canvas, world, onSelectCharacter, onSelectMonster 
     if (m.id === hoveredMonsterId) ctx.stroke();
   }
 
-  function drawCharacter(c) {
+    function drawCharacter(c) {
     const p = w2s(c.pos.x, c.pos.y);
     const color = RACE_NAMES[c.race].color;
     const size = 7 * dpr;
     const shape = ROLE_SHAPE[c.role] || "circle";
 
-    if (c.id === hoveredCharId) {
-      ctx.strokeStyle = "#ffffff";
+    // --- EFEK AURA PEJABAT & RELIC ---
+    const council = world.races[c.race].council;
+    
+    // 1. Aura Archon (Emas Berdenyut)
+    if (c.id === council.archon) {
+      ctx.strokeStyle = "#facc15"; // Emas
+      ctx.lineWidth = 3 * dpr;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, size + 6 * dpr + Math.sin(Date.now() / 200) * 2 * dpr, 0, Math.PI * 2);
+      ctx.stroke();
+    } 
+    // 2. Aura Dewan Lainnya (Biru Muda)
+    else if (
+      c.id === council.warchon || 
+      c.id === council.ser || 
+      c.id === council.def || 
+      c.id === council.support
+    ) {
+      ctx.strokeStyle = "#38bdf8"; // Biru Muda
       ctx.lineWidth = 2 * dpr;
       ctx.beginPath();
       ctx.arc(p.x, p.y, size + 4 * dpr, 0, Math.PI * 2);
       ctx.stroke();
     }
 
+    // 3. Aura Relic (+1 s/d +7)
+    if (c.relic && c.relic.owned) {
+      let relicColor = "#facc15"; // Default Kuning (+0 - +3)
+      if (c.relic.tier >= 4 && c.relic.tier <= 5) relicColor = "#a855f7"; // Ungu (+4 - +5)
+      if (c.relic.tier >= 6) relicColor = "#ef4444"; // Merah Menyala (+6 - +7)
+
+      ctx.strokeStyle = relicColor;
+      ctx.lineWidth = 2 * dpr;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, size + 2 * dpr, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Tampilkan Level Relic
+      if (c.relic.tier > 0) {
+        ctx.fillStyle = relicColor;
+        ctx.font = `bold ${10 * dpr}px system-ui`;
+        ctx.textAlign = "center";
+        ctx.fillText(`+${c.relic.tier}`, p.x, p.y - size - 14 * dpr);
+      }
+    }
+
+    // --- HOVER EFFECT ---
+    if (c.id === hoveredCharId) {
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, size + 8 * dpr, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // --- GAMBAR BENTUK KARAKTER ---
     ctx.fillStyle = color;
     ctx.strokeStyle = "#050911";
     ctx.lineWidth = 1.5 * dpr;
@@ -165,6 +213,7 @@ export function createRadar({ canvas, world, onSelectCharacter, onSelectMonster 
     ctx.fill();
     ctx.stroke();
 
+    // --- HP BAR ---
     if (c.hp < c.hpMax) {
       const ratio = Math.max(0, c.hp / c.hpMax);
       const barW = 16 * dpr;
@@ -173,10 +222,87 @@ export function createRadar({ canvas, world, onSelectCharacter, onSelectMonster 
       ctx.fillStyle = ratio > 0.5 ? "#22c55e" : ratio > 0.25 ? "#f59e0b" : "#ef4444";
       ctx.fillRect(p.x - barW / 2, p.y - size - 8 * dpr, barW * ratio, 2 * dpr);
     }
+
+    // --- TEKS VETERAN ---
+    if (c.vetRank > 0) {
+      ctx.fillStyle = "#fbbf24";
+      ctx.font = `bold ${10 * dpr}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.fillText(`V${c.vetRank}`, p.x, p.y - size - 18 * dpr);
+    }
+
+        // --- INDIKATOR REGU ---
+    if (c.squadId) {
+      ctx.fillStyle = "#a855f7"; // Warna ungu
+      ctx.font = `bold ${9 * dpr}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.fillText("🔗", p.x + size, p.y - size); // Ikon rantai kecil di pojok kanan atas
+    }
   }
 
-  function drawStructures(map) {
-    // 1. Gambar NPC di Base
+    function drawStructures(map) {
+    // 1. Gambar Area Markas (Lingkaran tebal transparan)
+    if (map.type === "base" && map.anchor) {
+      const p = w2s(map.anchor.x, map.anchor.y);
+      const edge = w2s(map.anchor.x + 15, map.anchor.y); // Radius 15
+      const radiusPx = Math.abs(edge.x - p.x);
+      
+      // Warna sesuai ras
+      const raceColor = RACE_NAMES[map.race]?.color || "#ffffff";
+      
+      ctx.fillStyle = raceColor + "15"; // Transparan 15%
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, radiusPx, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.strokeStyle = raceColor + "40";
+      ctx.lineWidth = 2 * dpr;
+      ctx.stroke();
+    }
+
+    // 2. Gambar Altar (Titik Respawn)
+    if (map.altar) {
+      const p = w2s(map.altar.x, map.altar.y);
+      ctx.fillStyle = "#a855f7"; // Ungu
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5 * dpr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = `${9 * dpr}px system-ui`;
+      ctx.fillText("Altar", p.x + 8 * dpr, p.y + 3 * dpr);
+    }
+    if (map.altars) {
+      for (const a of map.altars) {
+        const p = w2s(a.x, a.y);
+        ctx.fillStyle = a.race === "all" ? "#a855f7" : (RACE_NAMES[a.race]?.color || "#fff");
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4 * dpr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 3. Gambar Portal ke War (Titik Teleport)
+    if (map.portal) {
+      const p = w2s(map.portal.x, map.portal.y);
+      ctx.fillStyle = "#facc15"; // Kuning
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 6 * dpr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = `${9 * dpr}px system-ui`;
+      ctx.fillText("Portal War", p.x + 8 * dpr, p.y + 3 * dpr);
+    }
+    if (map.portals) {
+      for (const pObj of map.portals) {
+        const p = w2s(pObj.x, pObj.y);
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6 * dpr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 4. Gambar NPC (Kode lama dipertahankan)
     if (map.type === "base") {
       const pAnchor = w2s(map.anchor.x, map.anchor.y);
       ctx.fillStyle = "#34d399";
@@ -185,40 +311,32 @@ export function createRadar({ canvas, world, onSelectCharacter, onSelectMonster 
       ctx.fill();
       ctx.fillStyle = "#fff";
       ctx.font = `${10 * dpr}px system-ui`;
-      ctx.fillText("NPC Jual", pAnchor.x + 10 * dpr, pAnchor.y + 4 * dpr);
+      ctx.fillText("NPC", pAnchor.x + 10 * dpr, pAnchor.y + 4 * dpr);
 
       const pPvp = w2s(map.npcPvp.x, map.npcPvp.y);
       ctx.fillStyle = "#f43f5e";
       ctx.beginPath();
-      ctx.arc(pPvp.x, pPvp.y, 6 * dpr, 0, Math.PI * 2);
+      ctx.arc(pPvp.x, pPvp.y, 5 * dpr, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#fff";
-      ctx.fillText("NPC PvP", pPvp.x + 10 * dpr, pPvp.y + 4 * dpr);
     }
-
-    // 2. Gambar NPC di Zona Ether/Elan
     if (map.id === "ether" || map.id === "elan_plateau") {
       const pNpc = w2s(map.npc.x, map.npc.y);
       ctx.fillStyle = "#facc15";
       ctx.beginPath();
       ctx.arc(pNpc.x, pNpc.y, 6 * dpr, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#fff";
-      ctx.fillText("NPC Jual", pNpc.x + 10 * dpr, pNpc.y + 4 * dpr);
     }
 
-    // 3. Gambar Chip di Crag Mine
+    // 5. Gambar Chip di Crag Mine
     if (map.id === "crag_mine") {
       const chipPositions = [
         { race: "axion", x: 22, y: 26, color: "#ef4444" },
         { race: "belvian", x: 78, y: 26, color: "#38bdf8" },
         { race: "cyra", x: 50, y: 80, color: "#a855f7" }
       ];
-
       for (const chip of chipPositions) {
         const p = w2s(chip.x, chip.y);
         const hp = world.war.chipHp[chip.race] || 0;
-        
         ctx.fillStyle = hp > 0 ? chip.color : "#334155";
         ctx.beginPath();
         for (let i = 0; i < 6; i++) {
@@ -233,14 +351,6 @@ export function createRadar({ canvas, world, onSelectCharacter, onSelectMonster 
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 1.5 * dpr;
         ctx.stroke();
-
-        if (hp > 0) {
-          const ratio = hp / 30000;
-          ctx.fillStyle = "#1e293b";
-          ctx.fillRect(p.x - 15 * dpr, p.y - 20 * dpr, 30 * dpr, 4 * dpr);
-          ctx.fillStyle = chip.color;
-          ctx.fillRect(p.x - 15 * dpr, p.y - 20 * dpr, 30 * dpr * ratio, 4 * dpr);
-        }
       }
     }
   }

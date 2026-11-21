@@ -12,3 +12,14 @@ export function isInSafeZone(character) {
   }
   return false;
 }
+
+// Fungsi baru: Cek apakah koordinat X,Y berada di markas (Base)
+export function isPointInBase(mapId, x, y) {
+  const map = MAPS.find(m => m.id === mapId);
+  if (!map || map.type !== "base") return false;
+  
+  // Anggap radius 12 dari anchor adalah area markas yang aman
+  const anchor = map.anchor;
+  const dist = Math.hypot(x - anchor.x, y - anchor.y);
+  return dist <= 12;
+}
