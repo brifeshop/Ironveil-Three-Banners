@@ -35,21 +35,38 @@ export const MAPS = [
   { id: "base_axion",   name: "Base Axion",   type: "base", race: "axion",   anchor: { x: 14, y: 14 }, npcPvp: { x: 22, y: 20 }, chip: { x: 22, y: 26 } },
   { id: "base_belvian", name: "Base Belvian", type: "base", race: "belvian", anchor: { x: 14, y: 14 }, npcPvp: { x: 22, y: 20 }, chip: { x: 78, y: 26 } },
   { id: "base_cyra",    name: "Base Cyra",    type: "base", race: "cyra",    anchor: { x: 14, y: 14 }, npcPvp: { x: 22, y: 20 }, chip: { x: 50, y: 80 } },
-  { id: "ether",        name: "Ether",        type: "zone", race: null,      anchor: null,             npcPvp: null,               chip: null },
-  { id: "elan_plateau", name: "Elan Plateau", type: "zone", race: null,      anchor: null,             npcPvp: null,               chip: null },
-  { id: "crag_mine",    name: "Crag Mine",    type: "zone", race: null,      anchor: null,             npcPvp: null,               chip: null },
+  
+  // Ether: PvP bebas di luar, tapi ada mini-base aman untuk tiap ras
+  { id: "ether", name: "Ether", type: "zone", 
+    safeZones: [
+      { race: "axion", x: 20, y: 20, radius: 8 }, 
+      { race: "belvian", x: 80, y: 20, radius: 8 }, 
+      { race: "cyra", x: 50, y: 80, radius: 8 }
+    ],
+    npc: { x: 50, y: 50 } // NPC di tengah (rawan)
+  },
+  
+  // Elan: Safe Zone bersama untuk ke-3 ras
+  { id: "elan_plateau", name: "Elan Plateau", type: "zone", 
+    safeZones: [
+      { race: "all", x: 50, y: 50, radius: 15 }
+    ],
+    npc: { x: 50, y: 50 }
+  },
+  
+  { id: "crag_mine", name: "Crag Mine", type: "zone", safeZones: [] },
 ];
 
 export function getMap(id) {
   return MAPS.find(m => m.id === id) || null;
 }
 
-// Radius ring monster dari anchor markas (0-100 scale).
+// Zona visual (untuk gambar di radar) & Spawn monster
 export const HOME_RINGS = [
-  { ring: 1, min: 16, max: 30, minLv: 2,  maxLv: 6,  count: 10 },
-  { ring: 2, min: 34, max: 52, minLv: 8,  maxLv: 16, count: 10 },
-  { ring: 3, min: 56, max: 74, minLv: 18, maxLv: 28, count: 10 },
-  { ring: 4, min: 78, max: 96, minLv: 30, maxLv: 39, count: 10 },
+  { ring: 1, min: 16, max: 30, minLv: 2,  maxLv: 6,  count: 10, color: "#64748b", label: "Ring 1 (Lv 2–6)" },
+  { ring: 2, min: 34, max: 52, minLv: 8,  maxLv: 16, count: 10, color: "#22c55e", label: "Ring 2 (Lv 8–16)" },
+  { ring: 3, min: 56, max: 74, minLv: 18, maxLv: 28, count: 10, color: "#f97316", label: "Ring 3 (Lv 18–28)" },
+  { ring: 4, min: 78, max: 96, minLv: 30, maxLv: 39, count: 10, color: "#ef4444", label: "Ring 4 (Lv 30–39)" },
 ];
 
 // [TUNING] — angka awal, wajib dikalibrasi lewat headless sim.
@@ -78,6 +95,15 @@ export const TUNING = {
   monsterDefPerLevel: 1.2,
   monsterRespawnSeconds: 20,
 };
+
+// Loot table sederhana (nama & nilai jual)
+export const LOOT_TABLE = [
+  { name: "Beam Core",       minValue: 20,  maxValue: 60  },
+  { name: "Gli Crystal",     minValue: 40,  maxValue: 100 },
+  { name: "Rian Ore",        minValue: 80,  maxValue: 180 },
+  { name: "Talic Fragment",  minValue: 150, maxValue: 300 },
+  { name: "Dark Reliquary",  minValue: 250, maxValue: 500 },
+];
 
 export const GEAR_TIERS = [
   { reqLevel: 1,  name: "Novice Set",       cost: 0,      atkBonus: 0,   defBonus: 0 },

@@ -10,22 +10,51 @@
     .panel { background: #0b121f; border: 1px solid #1e293b; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-[#050911] text-slate-100">
   <header class="bg-[#090f1a] border-b border-slate-800 px-4 py-2 flex items-center justify-between">
-    <h1 id="title" class="text-lg font-bold text-white">Ironveil: Three Banners</h1>
-    <div id="status" class="text-xs text-slate-400"></div>
+    <div class="flex items-center gap-4">
+      <h1 id="title" class="text-lg font-bold text-white">Ironveil: Three Banners</h1>
+      <button id="btnTestWar" class="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold transition">🔥 Tes War</button>
+    </div>
+    <div id="status" class="text-xs text-slate-400 font-mono"></div>
   </header>
 
   <div class="flex flex-1 overflow-hidden">
+    <!-- KIRI: RADAR -->
     <main class="flex-1 flex flex-col min-w-0">
       <div id="map-tabs" class="flex gap-1 p-2 bg-[#0b121f] border-b border-slate-800 overflow-x-auto"></div>
       <div class="flex-1 relative bg-[#050911]">
         <canvas id="radar" class="w-full h-full block"></canvas>
       </div>
     </main>
-    <aside class="w-72 bg-[#0b121f] border-l border-slate-800 p-3 text-xs text-slate-400 overflow-y-auto">
-      <div class="font-semibold text-slate-200 mb-2">Inspektur</div>
-      <div id="inspector">Klik karakter di radar.</div>
+
+    <!-- KANAN: DASHBOARD (Inspektur, Log, Chat) -->
+    <aside class="w-80 bg-[#0b121f] border-l border-slate-800 flex flex-col h-full">
+      
+      <!-- 1. Inspektur -->
+      <div class="p-3 border-b border-slate-800">
+        <h2 class="text-xs font-bold text-sky-400 mb-2 uppercase tracking-wider">Inspektur Fokus</h2>
+        <div id="inspector" class="text-xs text-slate-300 bg-[#050911] p-2 rounded border border-slate-800 min-h-[80px]">
+          Klik karakter/monster di radar.
+        </div>
+      </div>
+
+      <!-- 2. Log Dunia -->
+      <div class="flex-1 flex flex-col min-h-0 border-b border-slate-800">
+        <div class="p-2 border-b border-slate-800 flex justify-between items-center bg-[#090f1a]">
+          <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Log Dunia</h2>
+        </div>
+        <div id="world-log" class="flex-1 overflow-y-auto p-2 space-y-1 text-[11px] font-mono"></div>
+      </div>
+
+      <!-- 3. Chat -->
+      <div class="h-48 flex flex-col bg-[#050911]">
+        <div class="p-2 border-b border-slate-800 bg-[#090f1a]">
+          <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Live Chat</h2>
+        </div>
+        <div id="chat-feed" class="flex-1 overflow-y-auto p-2 space-y-1 text-[11px] font-mono"></div>
+      </div>
+
     </aside>
   </div>
 

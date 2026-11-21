@@ -7,6 +7,7 @@ export function createWorld(seed) {
     schema: SCHEMA_VERSION,
     seed,
     simTick: 0,
+        electionTimer: 180,
     day: 1,
     season: 1,
     era: "Era Tenang",
@@ -19,11 +20,13 @@ export function createWorld(seed) {
     characters: [],
     monsters: [],
     logs: [],
+    chats: [],
     nextCharacterId: 1,
     nextMonsterId: 1,
     selectedCharacterId: null,
     currentMap: "base_axion",
     camera: { mode: "free", x: 50, y: 50, zoom: 1, followId: null },
+    
     war: {
       active: false,
       round: 0,
