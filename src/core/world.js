@@ -1,7 +1,6 @@
 // src/core/world.js
-// State global dunia: waktu, seed, ras, dan referensi entitas.
-
-import { SCHEMA_VERSION, RACE_NAMES, TUNING } from "../config.js";
+import { SCHEMA_VERSION, RACE_NAMES, MAPS } from "../config.js";
+import { createEventBus } from "./event-bus.js";
 
 export function createWorld(seed) {
   return {
@@ -11,6 +10,7 @@ export function createWorld(seed) {
     day: 1,
     season: 1,
     era: "Era Tenang",
+    events: createEventBus(),
     races: {
       axion:   createRaceState("axion"),
       belvian: createRaceState("belvian"),
@@ -21,6 +21,18 @@ export function createWorld(seed) {
     logs: [],
     nextCharacterId: 1,
     nextMonsterId: 1,
+    selectedCharacterId: null,
+    currentMap: "base_axion",
+    camera: { mode: "free", x: 50, y: 50, zoom: 1, followId: null },
+    war: {
+      active: false,
+      round: 0,
+      elapsed: 0,
+      defendingChampion: null,
+      allianceRivals: [],
+      participants: [],
+      chipHp: { axion: 0, belvian: 0, cyra: 0 },
+    },
   };
 }
 
@@ -29,7 +41,7 @@ function createRaceState(id) {
     id,
     name: RACE_NAMES[id].name,
     color: RACE_NAMES[id].color,
-    treasury: 0,
+    treasury: 320000,
     warFund: 0,
     morale: 100,
     wins: 0,

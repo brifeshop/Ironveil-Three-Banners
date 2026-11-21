@@ -10,11 +10,23 @@
     .panel { background: #0b121f; border: 1px solid #1e293b; }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center">
-  <div class="panel p-8 rounded-lg text-center max-w-md">
-    <h1 id="title" class="text-2xl font-bold mb-2">Ironveil: Three Banners</h1>
-    <p id="subtitle" class="text-slate-400 mb-6">Memuat…</p>
-    <div id="status" class="text-sm text-slate-500"></div>
+<body class="min-h-screen flex flex-col">
+  <header class="bg-[#090f1a] border-b border-slate-800 px-4 py-2 flex items-center justify-between">
+    <h1 id="title" class="text-lg font-bold text-white">Ironveil: Three Banners</h1>
+    <div id="status" class="text-xs text-slate-400"></div>
+  </header>
+
+  <div class="flex flex-1 overflow-hidden">
+    <main class="flex-1 flex flex-col min-w-0">
+      <div id="map-tabs" class="flex gap-1 p-2 bg-[#0b121f] border-b border-slate-800 overflow-x-auto"></div>
+      <div class="flex-1 relative bg-[#050911]">
+        <canvas id="radar" class="w-full h-full block"></canvas>
+      </div>
+    </main>
+    <aside class="w-72 bg-[#0b121f] border-l border-slate-800 p-3 text-xs text-slate-400 overflow-y-auto">
+      <div class="font-semibold text-slate-200 mb-2">Inspektur</div>
+      <div id="inspector">Klik karakter di radar.</div>
+    </aside>
   </div>
 
   <script type="module" src="./src/main.js"></script>

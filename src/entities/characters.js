@@ -1,7 +1,5 @@
 // src/entities/characters.js
-// Spawn, statistik, dan level-up karakter.
-
-import { RACE_NAMES, TUNING } from "../config.js";
+import { RACE_NAMES, TUNING, GEAR_TIERS } from "../config.js";
 
 const FIRST_NAMES = [
   "Kael", "Vera", "Dorn", "Lyra", "Rook", "Sena", "Tovan", "Mira",
@@ -23,17 +21,14 @@ const ROLE_MULT = {
 };
 
 export function spawnInitialCharacters(world, rng, perRace = 10) {
-  const races = ["axion", "belvian", "cyra"];
-  const usedNames = { axion: new Set(), belvian: new Set(), cyra: new Set() };
-
-  for (const race of races) {
+  for (const race of ["axion", "belvian", "cyra"]) {
+    const usedNames = new Set();
     for (let i = 0; i < perRace; i++) {
-      const name = pickUniqueName(rng, usedNames[race]);
+      const name = pickUniqueName(rng, usedNames);
       const role = rng.pick(ROLES);
       const archetype = rng.pick(ARCHETYPES);
       const level = rng.randInt(1, 3);
-      const c = createCharacter(world, rng, { race, name, role, archetype, level });
-      world.characters.push(c);
+      world.characters.push(createCharacter(world, rng, { race, name, role, archetype, level }));
     }
   }
 }
@@ -43,7 +38,6 @@ function pickUniqueName(rng, usedSet) {
     const n = rng.pick(FIRST_NAMES);
     if (!usedSet.has(n)) { usedSet.add(n); return n; }
   }
-  // fallback: tambah angka
   const n = rng.pick(FIRST_NAMES) + rng.randInt(2, 99);
   usedSet.add(n);
   return n;
@@ -52,6 +46,11 @@ function pickUniqueName(rng, usedSet) {
 export function createCharacter(world, rng, { race, name, role, archetype, level }) {
   const id = world.nextCharacterId++;
   const stats = computeStats(level, role);
+  let gearIdx = 0;
+  for (let i = GEAR_TIERS.length - 1; i >= 0; i--) {
+    if (level >= GEAR_TIERS[i].reqLevel) { gearIdx = i; break; }
+  }
+  const map = `base_${race}`;
   return {
     id,
     name,
@@ -66,8 +65,12 @@ export function createCharacter(world, rng, { race, name, role, archetype, level
     def: stats.def,
     cp: 0,
     pvp: 0,
-    gold: 0,
-    potions: 3,
+    gold: 3600 + level * 450,
+    potions: 5,
+    talic: 0,
+    lootBag: [],
+    gearTierIndex: gearIdx,
+    upgradePlus: 0,
     relic: { owned: false, tier: 0 },
     vetRank: 0,
     loyalty: 50,
@@ -75,10 +78,16 @@ export function createCharacter(world, rng, { race, name, role, archetype, level
     nemesisId: null,
     wanted: false,
     killStreak: 0,
+    warKills: 0,
+    bossKills: 0,
+    lastHits: 0,
+    treasuryDonated: 0,
+    recoveryTimer: 0,
     gmBuff: null,
     history: [],
-    pos: { x: 14 + rng.randInt(-3, 3), y: 14 + rng.randInt(-3, 3), map: `base_${race}` },
-    state: "idle",
+    pos: { x: 14 + rng.randInt(-3, 3), y: 14 + rng.randInt(-3, 3), map },
+    aiState: "GRINDING",
+    activityLabel: "Berburu monster",
     lastAttackTick: 0,
   };
 }
@@ -86,9 +95,9 @@ export function createCharacter(world, rng, { race, name, role, archetype, level
 export function computeStats(level, role) {
   const m = ROLE_MULT[role] || ROLE_MULT.SER;
   return {
-    hpMax: Math.round((120 + 35 * level) * m.hp),
-    atk: (10 + 4 * level) * m.atk,
-    def: (5 + 2.5 * level) * m.def,
+    hpMax: Math.round((450 + 38 * level) * m.hp),
+    atk: (12 + 1.6 * level + 14 + level * 3.8) * m.atk,
+    def: (14 + 3.1 * level) * m.def,
   };
 }
 

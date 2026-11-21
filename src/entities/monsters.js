@@ -1,71 +1,87 @@
 // src/entities/monsters.js
-// Spawn monster per ring di markas + zona khusus.
-
-const RING_LEVELS = [
-  { ring: 1, min: 2, max: 6, radiusMin: 3, radiusMax: 10 },
-  { ring: 2, min: 8, max: 16, radiusMin: 10, radiusMax: 20 },
-  { ring: 3, min: 18, max: 28, radiusMin: 20, radiusMax: 32 },
-  { ring: 4, min: 30, max: 39, radiusMin: 32, radiusMax: 46 },
-];
-
-const ZONE_LEVELS = {
-  ether: { min: 40, max: 44 },
-  elan_plateau: { min: 45, max: 50 },
-  crag_mine: { min: 30, max: 40 },
-};
+import { MAPS, HOME_RINGS, TUNING } from "../config.js";
 
 export function spawnAllMonsters(world, rng) {
   for (const race of ["axion", "belvian", "cyra"]) {
     spawnBaseMonsters(world, rng, `base_${race}`);
   }
-  for (const zone of Object.keys(ZONE_LEVELS)) {
-    spawnZoneMonsters(world, rng, zone);
-  }
+  spawnZoneMonsters(world, rng, "ether", 40, 44);
+  spawnZoneMonsters(world, rng, "elan_plateau", 45, 50);
+  spawnZoneMonsters(world, rng, "crag_mine", 30, 40);
 }
 
 function spawnBaseMonsters(world, rng, mapId) {
-  for (const r of RING_LEVELS) {
-    for (let i = 0; i < 10; i++) {
-      const angle = rng.next() * Math.PI * 2;
-      const radius = r.radiusMin + rng.next() * (r.radiusMax - r.radiusMin);
-      const level = rng.randInt(r.min, r.max);
-      world.monsters.push(createMonster(world, rng, {
-        map: mapId, level, ring: r.ring,
-        x: 14 + Math.cos(angle) * radius,
-        y: 14 + Math.sin(angle) * radius,
-      }));
+  const map = MAPS.find(m => m.id === mapId);
+  const anchor = map.anchor;
+  for (const ring of HOME_RINGS) {
+    for (let i = 0; i < ring.count; i++) {
+      const angle = rng.next() * Math.PI * 0.5 + 0.08;
+      const dist = ring.min + rng.next() * (ring.max - ring.min);
+      const x = clamp(anchor.x + Math.cos(angle) * dist, 8, 94);
+      const y = clamp(anchor.y + Math.sin(angle) * dist, 8, 94);
+      const level = rng.randInt(ring.minLv, ring.maxLv);
+      world.monsters.push(createMonster(world, rng, { map: mapId, level, ring: ring.ring, x, y }));
     }
   }
 }
 
-function spawnZoneMonsters(world, rng, mapId) {
-  const z = ZONE_LEVELS[mapId];
+function spawnZoneMonsters(world, rng, mapId, minLv, maxLv) {
   for (let i = 0; i < 40; i++) {
-    const level = rng.randInt(z.min, z.max);
-    world.monsters.push(createMonster(world, rng, {
-      map: mapId, level, ring: 0,
-      x: 4 + rng.next() * 56,
-      y: 4 + rng.next() * 28,
-    }));
+    const x = clamp(12 + rng.next() * 76, 8, 94);
+    const y = clamp(14 + rng.next() * 72, 8, 94);
+    const level = rng.randInt(minLv, maxLv);
+    world.monsters.push(createMonster(world, rng, { map: mapId, level, ring: 0, x, y }));
   }
 }
 
 function createMonster(world, rng, { map, level, ring, x, y }) {
-  const scale = 1.1 + Math.max(0, level - 40) * 0.15;
+  const scale = ring > 0 ? TUNING.monsterScale : 1.0;
+  const hpMax = Math.round((TUNING.monsterHpBase + TUNING.monsterHpPerLevel * level) * scale);
   return {
     id: world.nextMonsterId++,
     map,
     ring,
     level,
-    hpMax: Math.round((80 + 30 * level) * scale),
-    hp: Math.round((80 + 30 * level) * scale),
-    atk: 8 + 3 * level,
-    def: 4 + 2 * level,
+    hpMax,
+    hp: hpMax,
+    atk: Math.round((TUNING.monsterAtkBase + TUNING.monsterAtkPerLevel * level) * scale),
+    def: Math.round((TUNING.monsterDefBase + TUNING.monsterDefPerLevel * level) * scale),
+    expReward: Math.round(46 + level * 6.5),
     pos: { x, y },
-    spawnPos: { x, y },
+    homePos: { x, y },
+    patrolTarget: { x, y },
+    patrolRadius: 6.2,
     state: "idle",
     alive: true,
     respawnAtTick: 0,
+    aggroTargetId: null,
+    aggroTimer: 0,
     lastAttackTick: 0,
   };
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+// Patroli: monster bergerak pelan di sekitar homePos.
+export function tickMonsters(world, dt) {
+  for (const m of world.monsters) {
+    if (!m.alive) continue;
+
+    // Pilih target patroli baru jika sudah dekat / belum ada
+    const dx = m.patrolTarget.x - m.pos.x;
+    const dy = m.patrolTarget.y - m.pos.y;
+    const d = Math.hypot(dx, dy);
+
+    if (d < 0.5) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * m.patrolRadius;
+      m.patrolTarget.x = clamp(m.homePos.x + Math.cos(angle) * radius, 8, 94);
+      m.patrolTarget.y = clamp(m.homePos.y + Math.sin(angle) * radius, 8, 94);
+    } else {
+      const speed = 3.0; // unit per detik sim
+      const step = Math.min(d, speed * dt);
+      m.pos.x += (dx / d) * step;
+      m.pos.y += (dy / d) * step;
+    }
+  }
 }
